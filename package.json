@@ -1,0 +1,32 @@
+{
+  "name": "memoflow-sync-bridge",
+  "version": "0.1.0",
+  "description": "MemoFlow x Obsidian LAN sync bridge plugin",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production",
+    "check": "tsc --noEmit --skipLibCheck"
+  },
+  "keywords": [
+    "obsidian",
+    "memoflow",
+    "lan",
+    "sync"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/node": "^20.17.57",
+    "@types/bonjour": "^3.5.13",
+    "@types/qrcode": "^1.5.5",
+    "esbuild": "^0.25.11",
+    "obsidian": "^1.8.10",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "bonjour": "^3.5.0",
+    "busboy": "^1.6.0",
+    "qrcode": "^1.5.4"
+  }
+}

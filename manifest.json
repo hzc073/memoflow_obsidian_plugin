@@ -1,0 +1,10 @@
+{
+  "id": "memoflow-sync-bridge",
+  "name": "MemoFlow Sync Bridge",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Local LAN sync bridge for MemoFlow mobile app.",
+  "author": "MemoFlow",
+  "authorUrl": "",
+  "isDesktopOnly": true
+}
