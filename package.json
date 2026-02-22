@@ -3,10 +3,19 @@
   "version": "0.1.0",
   "description": "MemoFlow x Obsidian LAN sync bridge plugin",
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hzc073/memoflow_obsidian_plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hzc073/memoflow_obsidian_plugin/issues"
+  },
+  "homepage": "https://github.com/hzc073/memoflow_obsidian_plugin#readme",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
-    "check": "tsc --noEmit --skipLibCheck"
+    "check": "tsc --noEmit --skipLibCheck",
+    "release:check": "node scripts/release-check.mjs"
   },
   "keywords": [
     "obsidian",

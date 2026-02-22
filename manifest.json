@@ -5,6 +5,6 @@
   "minAppVersion": "1.5.0",
   "description": "Local LAN sync bridge for MemoFlow mobile app.",
   "author": "MemoFlow",
-  "authorUrl": "",
+  "authorUrl": "https://github.com/hzc073",
   "isDesktopOnly": true
 }

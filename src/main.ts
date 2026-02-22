@@ -81,7 +81,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     this.addCommand({
       id: "memoflow-bridge-show-pair-qr",
-      name: "显示 MemoFlow 配对二维码 / Show MemoFlow Pairing QR",
+      name: "显示配对二维码 / Show Pairing QR",
       callback: () => {
         const modal = new PairQrModal(this.app, this);
         modal.open();
@@ -90,7 +90,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     this.addCommand({
       id: "memoflow-bridge-regenerate-pair-code",
-      name: "重置配对码 / Regenerate Pair Code",
+      name: "重置配对码 / Regenerate Pairing Code",
       callback: async () => {
         this.regeneratePairCode(true);
         await this.persistPluginData();
@@ -756,7 +756,9 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "MemoFlow 同步桥 / MemoFlow Sync Bridge" });
+    new Setting(containerEl)
+      .setName("MemoFlow Sync Bridge / MemoFlow 同步桥")
+      .setHeading();
 
     let pairCodeText: { setValue: (value: string) => unknown } | null = null;
     let pairCodeButton: { setButtonText: (value: string) => unknown } | null =

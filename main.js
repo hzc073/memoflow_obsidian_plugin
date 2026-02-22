@@ -13108,7 +13108,7 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
     this.addSettingTab(new MemoFlowBridgeSettingTab(this.app, this));
     this.addCommand({
       id: "memoflow-bridge-show-pair-qr",
-      name: "\u663E\u793A MemoFlow \u914D\u5BF9\u4E8C\u7EF4\u7801 / Show MemoFlow Pairing QR",
+      name: "\u663E\u793A\u914D\u5BF9\u4E8C\u7EF4\u7801 / Show Pairing QR",
       callback: () => {
         const modal = new PairQrModal(this.app, this);
         modal.open();
@@ -13116,7 +13116,7 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
     });
     this.addCommand({
       id: "memoflow-bridge-regenerate-pair-code",
-      name: "\u91CD\u7F6E\u914D\u5BF9\u7801 / Regenerate Pair Code",
+      name: "\u91CD\u7F6E\u914D\u5BF9\u7801 / Regenerate Pairing Code",
       callback: async () => {
         this.regeneratePairCode(true);
         await this.persistPluginData();
@@ -13663,7 +13663,7 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
     this.clearPairCodeTicker();
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "MemoFlow \u540C\u6B65\u6865 / MemoFlow Sync Bridge" });
+    new import_obsidian.Setting(containerEl).setName("MemoFlow Sync Bridge / MemoFlow \u540C\u6B65\u6865").setHeading();
     let pairCodeText = null;
     let pairCodeButton = null;
     const pairCodeSetting = new import_obsidian.Setting(containerEl).setName("\u5F53\u524D\u914D\u5BF9\u7801 / Current Pair Code").addText((text) => {
