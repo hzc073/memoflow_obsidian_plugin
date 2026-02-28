@@ -1,4 +1,5 @@
-﻿import {
+import {
+  App,
   Modal,
   Notice,
   Plugin,
@@ -8,11 +9,11 @@
 } from "obsidian";
 import * as http from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { AddressInfo } from "node:net";
 import * as crypto from "node:crypto";
 import * as os from "node:os";
 import * as path from "node:path";
 import { Buffer } from "node:buffer";
+import type { Readable } from "node:stream";
 
 import bonjour from "bonjour";
 import Busboy from "busboy";
@@ -61,14 +62,16 @@ const DEFAULT_SETTINGS: MemoFlowBridgeSettings = {
 };
 
 const BRIDGE_API_VERSION = "bridge-v1";
+type BonjourInstance = ReturnType<typeof bonjour>;
+type BonjourService = ReturnType<BonjourInstance["publish"]>;
 
 export default class MemoFlowSyncBridgePlugin extends Plugin {
   settings: MemoFlowBridgeSettings = { ...DEFAULT_SETTINGS };
   authorizedDevices: Record<string, AuthorizedDevice> = {};
 
   private server: http.Server | null = null;
-  private bonjourInstance: any = null;
-  private bonjourService: any = null;
+  private bonjourInstance: BonjourInstance | null = null;
+  private bonjourService: BonjourService | null = null;
 
   private currentPairCode = "";
   private pairCodeExpiresAt = 0;
@@ -81,7 +84,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     this.addCommand({
       id: "memoflow-bridge-show-pair-qr",
-      name: "显示配对二维码 / Show Pairing QR",
+      name: "Show pairing code / 显示配对码",
       callback: () => {
         const modal = new PairQrModal(this.app, this);
         modal.open();
@@ -90,7 +93,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     this.addCommand({
       id: "memoflow-bridge-regenerate-pair-code",
-      name: "重置配对码 / Regenerate Pairing Code",
+      name: "Regenerate pairing code / 重置配对码",
       callback: async () => {
         this.regeneratePairCode(true);
         await this.persistPluginData();
@@ -99,7 +102,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     this.addRibbonIcon(
       "refresh-cw",
-      "MemoFlow 同步 / MemoFlow Sync",
+      "Sync / 同步",
       async () => {
         if (!this.isPairCodeAlive()) {
           this.regeneratePairCode(false);
@@ -112,8 +115,8 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
     await this.startBridge();
   }
 
-  async onunload(): Promise<void> {
-    await this.stopBridge();
+  onunload(): void {
+    void this.stopBridge();
   }
 
   async restartBridge(): Promise<void> {
@@ -188,7 +191,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     const address = this.server.address();
     if (address && typeof address !== "string") {
-      const actualPort = (address as AddressInfo).port;
+      const actualPort = address.port;
       if (actualPort !== this.settings.port) {
         this.settings.port = actualPort;
         await this.persistPluginData();
@@ -236,7 +239,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
         this.bonjourInstance.unpublishAll();
         this.bonjourInstance.destroy();
       }
-    } catch (_) {
+    } catch {
       // Ignore cleanup errors.
     }
     this.bonjourService = null;
@@ -352,7 +355,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     let meta: Record<string, unknown>;
     try {
-      const decoded = JSON.parse(metaRaw);
+      const decoded: unknown = JSON.parse(metaRaw);
       if (!decoded || typeof decoded !== "object") {
         throw new Error("meta should be an object");
       }
@@ -468,7 +471,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
         "file",
         (
           fieldName: string,
-          stream: NodeJS.ReadableStream,
+          stream: Readable,
           info: { filename: string; mimeType: string },
         ) => {
           const chunks: Buffer[] = [];
@@ -537,7 +540,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
 
     const raw = Buffer.concat(chunks).toString("utf8").trim();
     if (!raw) return {};
-    const data = JSON.parse(raw);
+    const data: unknown = JSON.parse(raw);
     if (data && typeof data === "object") {
       return data as Record<string, unknown>;
     }
@@ -643,7 +646,7 @@ export default class MemoFlowSyncBridgePlugin extends Plugin {
       if (exists) continue;
       try {
         await this.app.vault.createFolder(current);
-      } catch (_) {
+      } catch {
         // Another writer may have created this folder.
       }
     }
@@ -735,7 +738,7 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
   plugin: MemoFlowSyncBridgePlugin;
   private pairCodeTicker: number | null = null;
 
-  constructor(app: any, plugin: MemoFlowSyncBridgePlugin) {
+  constructor(app: App, plugin: MemoFlowSyncBridgePlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -757,14 +760,14 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     new Setting(containerEl)
-      .setName("MemoFlow Sync Bridge / MemoFlow 同步桥")
+      .setName("Sync / 同步")
       .setHeading();
 
     let pairCodeText: { setValue: (value: string) => unknown } | null = null;
     let pairCodeButton: { setButtonText: (value: string) => unknown } | null =
       null;
     const pairCodeSetting = new Setting(containerEl)
-      .setName("当前配对码 / Current Pair Code")
+      .setName("Current pair code / 当前配对码")
       .addText((text) => {
         pairCodeText = text;
         text.inputEl.readOnly = true;
@@ -782,15 +785,15 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
 
           const pairCode = this.plugin.getCurrentPairCode();
           if (!pairCode) {
-            new Notice("当前无可用配对码 / No active pair code.");
+            new Notice("No active pair code. / 当前无可用配对码。");
             return;
           }
 
           try {
             await navigator.clipboard.writeText(pairCode);
-            new Notice("配对码已复制 / Pair code copied.");
-          } catch (_) {
-            new Notice("复制失败，请手动复制 / Copy failed. Please copy manually.");
+            new Notice("Pair code copied. / 配对码已复制。");
+          } catch {
+            new Notice("Copy failed. Please copy manually. / 复制失败，请手动复制。");
           }
         });
       });
@@ -803,14 +806,14 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
       );
       const isAlive = expiresInSec > 0;
       const pairCodeStatus = isAlive
-        ? `剩余 ${expiresInSec} 秒 / Expires in ${expiresInSec}s`
-        : "已过期，请重置 / Expired, regenerate";
+        ? `Expires in ${expiresInSec}s / 剩余 ${expiresInSec} 秒`
+        : "Expired, regenerate. / 已过期，请重置。";
       pairCodeSetting.setDesc(
-        `手机手动配对可直接输入此码。${pairCodeStatus} / Enter this code in mobile app manual pairing. ${pairCodeStatus}`,
+        `Enter this code in manual pairing on the mobile app. ${pairCodeStatus} / 手机手动配对可直接输入此码。${pairCodeStatus}`,
       );
       pairCodeText?.setValue(pairCode);
       pairCodeButton?.setButtonText(
-        isAlive ? "复制 / Copy" : "重置 / Regenerate",
+        isAlive ? "Copy / 复制" : "Regenerate / 重置",
       );
     };
 
@@ -824,8 +827,8 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
     }, 1000);
 
     new Setting(containerEl)
-      .setName("端口 / Port")
-      .setDesc("本地 HTTP 服务端口 / Local HTTP service port")
+      .setName("Port / 端口")
+      .setDesc("Local HTTP service port / 本地 HTTP 服务端口")
       .addText((text) =>
         text
           .setPlaceholder("3000")
@@ -845,8 +848,8 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("笔记目录 / Inbox Folder")
-      .setDesc("生成的 memo 文件写入目录 / Target folder for generated memo files")
+      .setName("Inbox folder / 笔记目录")
+      .setDesc("Target folder for generated memo files / 生成的 memo 文件写入目录")
       .addText((text) =>
         text
           .setPlaceholder("Inbox")
@@ -858,11 +861,11 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("附件目录 / Attachments Folder")
-      .setDesc("图片/视频/文件的写入目录 / Target folder for images/videos/files")
+      .setName("Attachments folder / 附件目录")
+      .setDesc("Target folder for images, videos, and files / 图片/视频/文件的写入目录")
       .addText((text) =>
         text
-          .setPlaceholder("attachments")
+          .setPlaceholder("Attachments")
           .setValue(this.plugin.settings.attachmentsFolder)
           .onChange(async (value) => {
             this.plugin.settings.attachmentsFolder =
@@ -872,8 +875,10 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("广播名称 / Advertised Name")
-      .setDesc("mDNS 自动发现显示的服务名 / Service name shown by mDNS discovery")
+      .setName("Advertised name / 广播名称")
+      .setDesc(
+        "Service name shown by local network discovery / 本地网络发现显示的服务名",
+      )
       .addText((text) =>
         text
           .setPlaceholder(`MemoFlow-${os.hostname()}`)
@@ -886,8 +891,8 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("配对码有效期（秒） / Pair Code TTL (seconds)")
-      .setDesc("配对码的有效时长 / How long a pair code stays valid")
+      .setName("Pair code lifetime (seconds) / 配对码有效期（秒）")
+      .setDesc("How long a pair code stays valid / 配对码的有效时长")
       .addText((text) =>
         text
           .setPlaceholder("120")
@@ -905,8 +910,8 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("单文件大小上限（MB） / Max File Size (MB)")
-      .setDesc("单个附件允许的最大体积 / Single attachment max size")
+      .setName("Max file size (megabytes) / 单文件大小上限（兆字节）")
+      .setDesc("Single attachment max size / 单个附件允许的最大体积")
       .addText((text) =>
         text
           .setPlaceholder("200")
@@ -924,17 +929,17 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("配对 / Pairing")
-      .setDesc("重置配对码或展示二维码 / Regenerate pairing code or display a new QR")
+      .setName("Pairing / 配对")
+      .setDesc("Regenerate pairing code or show the pairing view / 重置配对码或显示配对窗口")
       .addButton((button) =>
-        button.setButtonText("重置 / Regenerate").onClick(async () => {
+        button.setButtonText("Regenerate / 重置").onClick(async () => {
           this.plugin.regeneratePairCode(true);
           await this.plugin.persistPluginData();
           this.display();
         }),
       )
       .addButton((button) =>
-        button.setButtonText("显示二维码 / Show QR").setCta().onClick(() => {
+        button.setButtonText("Show pairing code / 显示配对码").setCta().onClick(() => {
           new PairQrModal(this.app, this.plugin).open();
         }),
       );
@@ -944,7 +949,7 @@ class MemoFlowBridgeSettingTab extends PluginSettingTab {
 class PairQrModal extends Modal {
   private readonly plugin: MemoFlowSyncBridgePlugin;
 
-  constructor(app: any, plugin: MemoFlowSyncBridgePlugin) {
+  constructor(app: App, plugin: MemoFlowSyncBridgePlugin) {
     super(app);
     this.plugin = plugin;
   }
@@ -956,9 +961,9 @@ class PairQrModal extends Modal {
     const pairUri = this.plugin.getPairUri();
     const pairCode = this.plugin.getCurrentPairCode();
 
-    contentEl.createEl("h3", { text: "MemoFlow 配对二维码 / MemoFlow Pairing QR" });
+    contentEl.createEl("h3", { text: "Pairing code / 配对码" });
     contentEl.createEl("p", {
-      text: "请使用 MemoFlow 手机端扫描并完成配对 / Use MemoFlow mobile app to scan and complete pairing.",
+      text: "Use the mobile app to scan and complete pairing. / 请使用手机端扫描并完成配对。",
     });
 
     try {
@@ -969,14 +974,14 @@ class PairQrModal extends Modal {
       contentEl.createEl("img", {
         attr: {
           src,
-          alt: "MemoFlow Pairing QR",
+          alt: "Pairing code",
           style:
             "display:block;margin:12px auto;max-width:280px;width:100%;border-radius:8px;",
         },
       });
     } catch (error) {
       contentEl.createEl("p", {
-        text: `二维码渲染失败 / QR render failed: ${String(error)}`,
+        text: `QR render failed: ${String(error)} / 二维码渲染失败。`,
       });
     }
 
@@ -985,23 +990,23 @@ class PairQrModal extends Modal {
     });
     box.rows = 1;
     box.readOnly = true;
-    box.style.width = "100%";
+    box.setCssProps({ width: "100%" });
 
     new Setting(contentEl)
-      .setName("复制配对码 / Copy Pair Code")
+      .setName("Copy pair code / 复制配对码")
       .addButton((button) =>
-        button.setButtonText("复制 / Copy").setCta().onClick(async () => {
+        button.setButtonText("Copy / 复制").setCta().onClick(async () => {
           try {
             await navigator.clipboard.writeText(pairCode);
-            new Notice("配对码已复制 / Pair code copied.");
-          } catch (_) {
-            new Notice("复制失败，请手动复制 / Copy failed. Please copy manually.");
+            new Notice("Pair code copied. / 配对码已复制。");
+          } catch {
+            new Notice("Copy failed. Please copy manually. / 复制失败，请手动复制。");
           }
         }),
       );
 
     contentEl.createEl("p", {
-      text: "配对码有效期较短，过期请重置 / Pair code is short-lived. Regenerate if expired.",
+      text: "Pair code is short-lived. Regenerate if expired. / 配对码有效期较短，过期请重置。",
     });
   }
 

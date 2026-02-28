@@ -13108,7 +13108,7 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
     this.addSettingTab(new MemoFlowBridgeSettingTab(this.app, this));
     this.addCommand({
       id: "memoflow-bridge-show-pair-qr",
-      name: "\u663E\u793A\u914D\u5BF9\u4E8C\u7EF4\u7801 / Show Pairing QR",
+      name: "Show pairing code / \u663E\u793A\u914D\u5BF9\u7801",
       callback: () => {
         const modal = new PairQrModal(this.app, this);
         modal.open();
@@ -13116,7 +13116,7 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
     });
     this.addCommand({
       id: "memoflow-bridge-regenerate-pair-code",
-      name: "\u91CD\u7F6E\u914D\u5BF9\u7801 / Regenerate Pairing Code",
+      name: "Regenerate pairing code / \u91CD\u7F6E\u914D\u5BF9\u7801",
       callback: async () => {
         this.regeneratePairCode(true);
         await this.persistPluginData();
@@ -13124,7 +13124,7 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
     });
     this.addRibbonIcon(
       "refresh-cw",
-      "MemoFlow \u540C\u6B65 / MemoFlow Sync",
+      "Sync / \u540C\u6B65",
       async () => {
         if (!this.isPairCodeAlive()) {
           this.regeneratePairCode(false);
@@ -13135,8 +13135,8 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
     );
     await this.startBridge();
   }
-  async onunload() {
-    await this.stopBridge();
+  onunload() {
+    void this.stopBridge();
   }
   async restartBridge() {
     await this.stopBridge();
@@ -13244,7 +13244,7 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
         this.bonjourInstance.unpublishAll();
         this.bonjourInstance.destroy();
       }
-    } catch (_) {
+    } catch {
     }
     this.bonjourService = null;
     this.bonjourInstance = null;
@@ -13569,7 +13569,7 @@ var MemoFlowSyncBridgePlugin = class extends import_obsidian.Plugin {
       if (exists) continue;
       try {
         await this.app.vault.createFolder(current);
-      } catch (_) {
+      } catch {
       }
     }
   }
@@ -13663,10 +13663,10 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
     this.clearPairCodeTicker();
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("MemoFlow Sync Bridge / MemoFlow \u540C\u6B65\u6865").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Sync / \u540C\u6B65").setHeading();
     let pairCodeText = null;
     let pairCodeButton = null;
-    const pairCodeSetting = new import_obsidian.Setting(containerEl).setName("\u5F53\u524D\u914D\u5BF9\u7801 / Current Pair Code").addText((text) => {
+    const pairCodeSetting = new import_obsidian.Setting(containerEl).setName("Current pair code / \u5F53\u524D\u914D\u5BF9\u7801").addText((text) => {
       pairCodeText = text;
       text.inputEl.readOnly = true;
     }).addButton((button) => {
@@ -13681,14 +13681,14 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
         }
         const pairCode = this.plugin.getCurrentPairCode();
         if (!pairCode) {
-          new import_obsidian.Notice("\u5F53\u524D\u65E0\u53EF\u7528\u914D\u5BF9\u7801 / No active pair code.");
+          new import_obsidian.Notice("No active pair code. / \u5F53\u524D\u65E0\u53EF\u7528\u914D\u5BF9\u7801\u3002");
           return;
         }
         try {
           await navigator.clipboard.writeText(pairCode);
-          new import_obsidian.Notice("\u914D\u5BF9\u7801\u5DF2\u590D\u5236 / Pair code copied.");
-        } catch (_) {
-          new import_obsidian.Notice("\u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u624B\u52A8\u590D\u5236 / Copy failed. Please copy manually.");
+          new import_obsidian.Notice("Pair code copied. / \u914D\u5BF9\u7801\u5DF2\u590D\u5236\u3002");
+        } catch {
+          new import_obsidian.Notice("Copy failed. Please copy manually. / \u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u624B\u52A8\u590D\u5236\u3002");
         }
       });
     });
@@ -13699,13 +13699,13 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
         Math.ceil((this.plugin.getPairCodeExpiresAt() - Date.now()) / 1e3)
       );
       const isAlive = expiresInSec > 0;
-      const pairCodeStatus = isAlive ? `\u5269\u4F59 ${expiresInSec} \u79D2 / Expires in ${expiresInSec}s` : "\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u7F6E / Expired, regenerate";
+      const pairCodeStatus = isAlive ? `Expires in ${expiresInSec}s / \u5269\u4F59 ${expiresInSec} \u79D2` : "Expired, regenerate. / \u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u7F6E\u3002";
       pairCodeSetting.setDesc(
-        `\u624B\u673A\u624B\u52A8\u914D\u5BF9\u53EF\u76F4\u63A5\u8F93\u5165\u6B64\u7801\u3002${pairCodeStatus} / Enter this code in mobile app manual pairing. ${pairCodeStatus}`
+        `Enter this code in manual pairing on the mobile app. ${pairCodeStatus} / \u624B\u673A\u624B\u52A8\u914D\u5BF9\u53EF\u76F4\u63A5\u8F93\u5165\u6B64\u7801\u3002${pairCodeStatus}`
       );
       pairCodeText?.setValue(pairCode);
       pairCodeButton?.setButtonText(
-        isAlive ? "\u590D\u5236 / Copy" : "\u91CD\u7F6E / Regenerate"
+        isAlive ? "Copy / \u590D\u5236" : "Regenerate / \u91CD\u7F6E"
       );
     };
     renderPairCodeSetting();
@@ -13716,7 +13716,7 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
       }
       renderPairCodeSetting();
     }, 1e3);
-    new import_obsidian.Setting(containerEl).setName("\u7AEF\u53E3 / Port").setDesc("\u672C\u5730 HTTP \u670D\u52A1\u7AEF\u53E3 / Local HTTP service port").addText(
+    new import_obsidian.Setting(containerEl).setName("Port / \u7AEF\u53E3").setDesc("Local HTTP service port / \u672C\u5730 HTTP \u670D\u52A1\u7AEF\u53E3").addText(
       (text) => text.setPlaceholder("3000").setValue(String(this.plugin.settings.port)).onChange(async (value) => {
         const next = this.plugin.parsePositiveInt(
           value,
@@ -13730,26 +13730,28 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.restartBridge();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("\u7B14\u8BB0\u76EE\u5F55 / Inbox Folder").setDesc("\u751F\u6210\u7684 memo \u6587\u4EF6\u5199\u5165\u76EE\u5F55 / Target folder for generated memo files").addText(
+    new import_obsidian.Setting(containerEl).setName("Inbox folder / \u7B14\u8BB0\u76EE\u5F55").setDesc("Target folder for generated memo files / \u751F\u6210\u7684 memo \u6587\u4EF6\u5199\u5165\u76EE\u5F55").addText(
       (text) => text.setPlaceholder("Inbox").setValue(this.plugin.settings.inboxFolder).onChange(async (value) => {
         this.plugin.settings.inboxFolder = value.trim() || "Inbox";
         await this.plugin.persistPluginData();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("\u9644\u4EF6\u76EE\u5F55 / Attachments Folder").setDesc("\u56FE\u7247/\u89C6\u9891/\u6587\u4EF6\u7684\u5199\u5165\u76EE\u5F55 / Target folder for images/videos/files").addText(
-      (text) => text.setPlaceholder("attachments").setValue(this.plugin.settings.attachmentsFolder).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Attachments folder / \u9644\u4EF6\u76EE\u5F55").setDesc("Target folder for images, videos, and files / \u56FE\u7247/\u89C6\u9891/\u6587\u4EF6\u7684\u5199\u5165\u76EE\u5F55").addText(
+      (text) => text.setPlaceholder("Attachments").setValue(this.plugin.settings.attachmentsFolder).onChange(async (value) => {
         this.plugin.settings.attachmentsFolder = value.trim() || "attachments";
         await this.plugin.persistPluginData();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("\u5E7F\u64AD\u540D\u79F0 / Advertised Name").setDesc("mDNS \u81EA\u52A8\u53D1\u73B0\u663E\u793A\u7684\u670D\u52A1\u540D / Service name shown by mDNS discovery").addText(
+    new import_obsidian.Setting(containerEl).setName("Advertised name / \u5E7F\u64AD\u540D\u79F0").setDesc(
+      "Service name shown by local network discovery / \u672C\u5730\u7F51\u7EDC\u53D1\u73B0\u663E\u793A\u7684\u670D\u52A1\u540D"
+    ).addText(
       (text) => text.setPlaceholder(`MemoFlow-${os.hostname()}`).setValue(this.plugin.settings.advertisedName).onChange(async (value) => {
         this.plugin.settings.advertisedName = value.trim();
         await this.plugin.persistPluginData();
         this.plugin.startMdns();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("\u914D\u5BF9\u7801\u6709\u6548\u671F\uFF08\u79D2\uFF09 / Pair Code TTL (seconds)").setDesc("\u914D\u5BF9\u7801\u7684\u6709\u6548\u65F6\u957F / How long a pair code stays valid").addText(
+    new import_obsidian.Setting(containerEl).setName("Pair code lifetime (seconds) / \u914D\u5BF9\u7801\u6709\u6548\u671F\uFF08\u79D2\uFF09").setDesc("How long a pair code stays valid / \u914D\u5BF9\u7801\u7684\u6709\u6548\u65F6\u957F").addText(
       (text) => text.setPlaceholder("120").setValue(String(this.plugin.settings.pairCodeTtlSeconds)).onChange(async (value) => {
         const next = this.plugin.parsePositiveInt(
           value,
@@ -13761,7 +13763,7 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.persistPluginData();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("\u5355\u6587\u4EF6\u5927\u5C0F\u4E0A\u9650\uFF08MB\uFF09 / Max File Size (MB)").setDesc("\u5355\u4E2A\u9644\u4EF6\u5141\u8BB8\u7684\u6700\u5927\u4F53\u79EF / Single attachment max size").addText(
+    new import_obsidian.Setting(containerEl).setName("Max file size (megabytes) / \u5355\u6587\u4EF6\u5927\u5C0F\u4E0A\u9650\uFF08\u5146\u5B57\u8282\uFF09").setDesc("Single attachment max size / \u5355\u4E2A\u9644\u4EF6\u5141\u8BB8\u7684\u6700\u5927\u4F53\u79EF").addText(
       (text) => text.setPlaceholder("200").setValue(String(this.plugin.settings.maxFileSizeMB)).onChange(async (value) => {
         const next = this.plugin.parsePositiveInt(
           value,
@@ -13773,14 +13775,14 @@ var MemoFlowBridgeSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.persistPluginData();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("\u914D\u5BF9 / Pairing").setDesc("\u91CD\u7F6E\u914D\u5BF9\u7801\u6216\u5C55\u793A\u4E8C\u7EF4\u7801 / Regenerate pairing code or display a new QR").addButton(
-      (button) => button.setButtonText("\u91CD\u7F6E / Regenerate").onClick(async () => {
+    new import_obsidian.Setting(containerEl).setName("Pairing / \u914D\u5BF9").setDesc("Regenerate pairing code or show the pairing view / \u91CD\u7F6E\u914D\u5BF9\u7801\u6216\u663E\u793A\u914D\u5BF9\u7A97\u53E3").addButton(
+      (button) => button.setButtonText("Regenerate / \u91CD\u7F6E").onClick(async () => {
         this.plugin.regeneratePairCode(true);
         await this.plugin.persistPluginData();
         this.display();
       })
     ).addButton(
-      (button) => button.setButtonText("\u663E\u793A\u4E8C\u7EF4\u7801 / Show QR").setCta().onClick(() => {
+      (button) => button.setButtonText("Show pairing code / \u663E\u793A\u914D\u5BF9\u7801").setCta().onClick(() => {
         new PairQrModal(this.app, this.plugin).open();
       })
     );
@@ -13797,9 +13799,9 @@ var PairQrModal = class extends import_obsidian.Modal {
     contentEl.empty();
     const pairUri = this.plugin.getPairUri();
     const pairCode = this.plugin.getCurrentPairCode();
-    contentEl.createEl("h3", { text: "MemoFlow \u914D\u5BF9\u4E8C\u7EF4\u7801 / MemoFlow Pairing QR" });
+    contentEl.createEl("h3", { text: "Pairing code / \u914D\u5BF9\u7801" });
     contentEl.createEl("p", {
-      text: "\u8BF7\u4F7F\u7528 MemoFlow \u624B\u673A\u7AEF\u626B\u63CF\u5E76\u5B8C\u6210\u914D\u5BF9 / Use MemoFlow mobile app to scan and complete pairing."
+      text: "Use the mobile app to scan and complete pairing. / \u8BF7\u4F7F\u7528\u624B\u673A\u7AEF\u626B\u63CF\u5E76\u5B8C\u6210\u914D\u5BF9\u3002"
     });
     try {
       const src = await import_qrcode.default.toDataURL(pairUri, {
@@ -13809,13 +13811,13 @@ var PairQrModal = class extends import_obsidian.Modal {
       contentEl.createEl("img", {
         attr: {
           src,
-          alt: "MemoFlow Pairing QR",
+          alt: "Pairing code",
           style: "display:block;margin:12px auto;max-width:280px;width:100%;border-radius:8px;"
         }
       });
     } catch (error) {
       contentEl.createEl("p", {
-        text: `\u4E8C\u7EF4\u7801\u6E32\u67D3\u5931\u8D25 / QR render failed: ${String(error)}`
+        text: `QR render failed: ${String(error)} / \u4E8C\u7EF4\u7801\u6E32\u67D3\u5931\u8D25\u3002`
       });
     }
     const box = contentEl.createEl("textarea", {
@@ -13823,19 +13825,19 @@ var PairQrModal = class extends import_obsidian.Modal {
     });
     box.rows = 1;
     box.readOnly = true;
-    box.style.width = "100%";
-    new import_obsidian.Setting(contentEl).setName("\u590D\u5236\u914D\u5BF9\u7801 / Copy Pair Code").addButton(
-      (button) => button.setButtonText("\u590D\u5236 / Copy").setCta().onClick(async () => {
+    box.setCssProps({ width: "100%" });
+    new import_obsidian.Setting(contentEl).setName("Copy pair code / \u590D\u5236\u914D\u5BF9\u7801").addButton(
+      (button) => button.setButtonText("Copy / \u590D\u5236").setCta().onClick(async () => {
         try {
           await navigator.clipboard.writeText(pairCode);
-          new import_obsidian.Notice("\u914D\u5BF9\u7801\u5DF2\u590D\u5236 / Pair code copied.");
-        } catch (_) {
-          new import_obsidian.Notice("\u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u624B\u52A8\u590D\u5236 / Copy failed. Please copy manually.");
+          new import_obsidian.Notice("Pair code copied. / \u914D\u5BF9\u7801\u5DF2\u590D\u5236\u3002");
+        } catch {
+          new import_obsidian.Notice("Copy failed. Please copy manually. / \u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u624B\u52A8\u590D\u5236\u3002");
         }
       })
     );
     contentEl.createEl("p", {
-      text: "\u914D\u5BF9\u7801\u6709\u6548\u671F\u8F83\u77ED\uFF0C\u8FC7\u671F\u8BF7\u91CD\u7F6E / Pair code is short-lived. Regenerate if expired."
+      text: "Pair code is short-lived. Regenerate if expired. / \u914D\u5BF9\u7801\u6709\u6548\u671F\u8F83\u77ED\uFF0C\u8FC7\u671F\u8BF7\u91CD\u7F6E\u3002"
     });
   }
   onClose() {

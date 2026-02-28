@@ -25,11 +25,15 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@types/bonjour": "^3.5.13",
     "@types/busboy": "^1.5.4",
     "@types/node": "^20.17.57",
-    "@types/bonjour": "^3.5.13",
     "@types/qrcode": "^1.5.5",
+    "@typescript-eslint/parser": "^8.56.1",
     "esbuild": "^0.25.11",
+    "eslint": "^9.39.3",
+    "eslint-plugin-obsidianmd": "^0.1.9",
+    "globals": "^17.3.0",
     "obsidian": "^1.8.10",
     "typescript": "^5.9.3"
   },
